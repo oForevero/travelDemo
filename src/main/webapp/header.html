@@ -1,0 +1,206 @@
+<script src="js/getParameter.js"></script>
+<script>
+    $(function () {
+        $(".login").hide();
+        $.get("user/findUser",{},function (data) {
+            if(data!=null){
+                if(data.name!=null){
+                    $(".login_out").hide();
+                    $(".login").show();
+                    const msg = "欢迎回来，"+data.name;
+                    $("#span_msg").html(msg);
+                }
+            }
+        });
+        $.get("category/listCategory",{},function (data){
+           if(data!=null){
+               var lis = '<li class="nav-active"><a href="index.html">首页</a></li>';
+               for(let element of data){
+                   var li = '<li><a href="route_list.html?cid='+element.cid+'">'+element.cname+'</a></li>';
+                   lis += li;
+               };
+               lis += '<li><a href="favoriterank.html">收藏排行榜</a></li>';
+               $("#category").html(lis);
+           }
+        });
+        $("#searchBt").click(function () {
+            let rname = $("#searchValue").val();
+            let cid = getParameter("cid");
+            if(rname){//判断空值方法
+                rname = window.decodeURIComponent(rname);//进行url解码
+            }
+            $.get("route/pageQuery",{rname:rname, cid:cid, pageSize: 20},function (pb) {
+                let parentPage = 1;
+                initPage(pb,cid,parentPage);
+                initRoute(pb);
+            });
+        });
+        function initPage(pb,cid,currentPage,rname) {
+            $("#totalPage").html(pb.totalPage);
+            $("#totalCount").html(pb.totalCount);
+            var lis = "";
+            const firstPage = '<li><a href="javascript:load('+cid+','+1+','+rname+')">首页</a></li>';
+            lis += firstPage;
+            var beforePage = '<li class="threeword"><a href="javascript:load('+cid+','+(currentPage-1)+','+rname+')">上一页</a></li>';
+            if(currentPage==1){
+                beforePage = '<li class="threeword"><a href="javascript:load('+cid+','+1+','+rname+')">上一页</a></li>';
+            }
+            lis += beforePage;
+            /*for (let i = 1; i <= pb.totalPage; i++) {
+                var li = '<li><a href="javascript:load('+cid+','+i+');">' + i + '</a></li>';
+                if(currentPage == i){
+                    li = '<li class="curPage"><a href="javascript:load('+cid+','+i+');">' + i + '</a></li>';
+                }
+                lis += li;
+            }*/
+            lis += initPageByLimit(pb,cid,pb.totalPage);
+            var nextPage = '<li class="threeword"><a href="javascript:load('+cid+','+(currentPage+1)+','+rname+');">下一页</a></li>';
+            if(currentPage == pb.totalPage){
+                nextPage = '<li class="threeword"><a href="javascript:load('+cid+','+(currentPage)+','+rname+');">下一页</a></li>';
+            }
+            const lastPage = '<li class="threeword"><a href="javascript:load('+cid+','+pb.totalPage+','+rname+');">尾页</a></li>';
+            lis += nextPage;
+            lis += lastPage;
+            $("#page_route").html(lis);
+        }
+        /*
+        * <li>
+                        <div class="img"><img src="images/04-search_03.jpg" alt=""></div>
+                        <div class="text1">
+                            <p>【减100元 含除夕/春节出发】广州增城三英温泉度假酒店/自由行套票</p>
+                            <br/>
+                            <p>1-2月出发，网付立享￥1099/2人起！爆款位置有限，抢完即止！</p>
+                        </div>
+                        <div class="price">
+                            <p class="price_num">
+                                <span>&yen;</span>
+                                <span>299</span>
+                                <span>起</span>
+                            </p>
+                            <p><a href="route_detail.html">查看详情</a></p>
+                        </div>
+                    </li>
+        * */
+        /**
+         * 增加条目方法
+         * @param pb
+         */
+        function initRoute(pb){
+            var lis = "";
+            var pageSize = pb.pageSize;
+            for (let i = 0; i <pb.listLength; i++) {
+                var element = pb.list[i];
+                var li = '<li>\n' +
+                    '<div class="img"><img src="'+element.rimage+'" width="299px" alt=""></div>\n' +
+                    '    <div class="text1">\n' +
+                    '        <p>'+element.rname+'\n' +
+                    '           <br/>\n' +
+                    '        <p>'+element.routeIntroduce+'</p>\n' +
+                    '    </div>\n' +
+                    '    <div class="price">\n' +
+                    '        <p class="price_num">\n' +
+                    '           <span>&yen;</span>\n' +
+                    '           <span>'+element.price+'</span>\n' +
+                    '           <span>起</span>\n' +
+                    '           </p>\n' +
+                    '           <p><a href="route_detail.html">查看详情</a></p>\n' +
+                    '    </div>\n' +
+                    '</li>';
+                lis += li;
+            }
+            $("#route_ul").html(lis);
+        }
+
+        /**
+         *
+         * @param pb
+         */
+        function initPageByLimit(pb,cid,totalPage){
+            var pages = "";
+            if(totalPage < 10){
+                for (let i = 1; i <= totalPage; i++) {
+                    var li = '<li><a href="javascript:load('+cid+','+i+');">' + i + '</a></li>';
+                    if(pb.currentPage == i){
+                        li = '<li class="curPage"><a href="javascript:load('+cid+','+i+');">' + i + '</a></li>';
+                    }
+                    pages += li;
+                }
+            }else {
+                var begin = pb.currentPage - 5;
+                var end = pb.currentPage +4;
+                if(begin < 1){
+                    begin = 1;
+                    end = begin+9;
+                }
+                if(begin > totalPage-9){
+                    begin = totalPage-9;
+                    end = totalPage;
+                }
+                for (let i = begin; i <= end; i++) {
+                    var li = '<li><a href="javascript:load('+cid+','+i+');">' + i + '</a></li>';
+                    if(pb.currentPage == i){
+                        li = '<li class="curPage"><a href="javascript:load('+cid+','+i+');">' + i + '</a></li>';
+                    }
+                    pages += li;
+                }
+            }
+            return pages;
+        }
+    });
+</script>
+<!-- 头部 start -->
+    <header id="header">
+        <div class="top_banner">
+            <img src="images/top_banner.jpg" alt="">
+        </div>
+        <div class="shortcut">
+            <!-- 未登录状态  -->
+            <div class="login_out">
+                <a href="login.html">登录</a>
+                <a href="register.html">注册</a>
+            </div>
+            <!-- 登录状态  -->
+            <div class="login">
+                <span id="span_msg"></span>
+                <a href="myfavorite.html" class="collection">我的收藏</a>
+                <a href="javascript:location.href='user/loginOut';">退出</a>
+            </div>
+        </div>
+        <div class="header_wrap">
+            <div class="topbar">
+                <div class="logo">
+                    <a href="/"><img src="images/logo.jpg" alt=""></a>
+                </div>
+                <div class="search">
+                    <input name="" type="text" id="searchValue" placeholder="请输入路线名称" class="search_input" autocomplete="off">
+                    <a href="javascript:;" id="searchBt" class="search-button">搜索</a>
+                </div>
+                <div class="hottel">
+                    <div class="hot_pic">
+                        <img src="images/hot_tel.jpg" alt="">
+                    </div>
+                    <div class="hot_tel">
+                        <p class="hot_time">客服热线(9:00-6:00)</p>
+                        <p class="hot_num">400-618-9090</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- 头部 end -->
+     <!-- 首页导航 -->
+    <div class="navitem">
+        <ul class="nav" id="category">
+            <!--<li class="nav-active"><a href="index.html">首页</a></li>
+            <li><a href="route_list.html">门票</a></li>
+            <li><a href="route_list.html">酒店</a></li>
+            <li><a href="route_list.html">香港车票</a></li>
+            <li><a href="route_list.html">出境游</a></li>
+            <li><a href="route_list.html">国内游</a></li>
+            <li><a href="route_list.html">港澳游</a></li>
+            <li><a href="route_list.html">抱团定制</a></li>
+            <li><a href="route_list.html">全球自由行</a></li>
+            <li><a href="favoriterank.html">收藏排行榜</a></li>-->
+        </ul>
+    </div>
+    
